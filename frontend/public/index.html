@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Agent Platform</title>
+    <meta name="description" content="Enterprise-grade medical research platform with AI agents">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><text y='20' font-size='20'>🏥</text></svg>">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --border-color: #e5e7eb;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --border-radius: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255,255,255,0.15);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            webkit-backdrop-filter: blur(10px);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.error {
+            background: var(--error-color);
+        }
+
+        .status-dot.warning {
+            background: var(--warning-color);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            min-height: calc(100vh - 80px);
+        }
+
+        .chat-section {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-primary);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .chat-header {
+            padding: 1rem 1.5rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .clear-btn {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .clear-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            scroll-behavior: smooth;
+            min-height: 400px;
+            max-height: 600px;
+        }
+
+        .message {
+            margin-bottom: 1.5rem;
+            animation: messageSlide 0.3s ease-out;
+        }
+
+        .message.user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .message.assistant {
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            padding: 1rem 1.25rem;
+            border-radius: 18px;
+            word-wrap: break-word;
+            position: relative;
+        }
+
+        .message.user .message-bubble {
+            background: var(--primary-gradient);
+            color: white;
+            border-bottom-right-radius: 6px;
+        }
+
+        .message.assistant .message-bubble {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-bottom-left-radius: 6px;
+        }
+
+        .message-timestamp {
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-top: 0.5rem;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .result-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .result-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+
+        .result-header {
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .source-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+        }
+
+        .source-icon.clinical-trials { background: var(--success-color); }
+        .source-icon.pubmed { background: #8b5cf6; }
+        .source-icon.openfda { background: var(--error-color); }
+
+        .result-content {
+            padding: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .result-item {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.2s;
+        }
+
+        .result-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .result-meta {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .result-link {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .result-link:hover {
+            text-decoration: underline;
+        }
+
+        .input-section {
+            padding: 1.5rem;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .input-form {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .query-input {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s;
+            background: var(--bg-primary);
+            resize: vertical;
+            min-height: 50px;
+            max-height: 120px;
+        }
+
+        .query-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .submit-btn {
+            padding: 1rem 2rem;
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 120px;
+            justify-content: center;
+        }
+
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .panel {
+            background: var(--bg-primary);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 1rem 1.25rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+        }
+
+        .panel-content {
+            padding: 1.25rem;
+        }
+
+        .decision-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .decision-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .decision-value {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-align: right;
+            max-width: 60%;
+            word-break: break-word;
+        }
+
+        .confidence-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: var(--primary-gradient);
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .source-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .source-name {
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .source-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .source-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+        }
+
+        .source-dot.error {
+            background: var(--error-color);
+        }
+
+        .source-dot.loading {
+            background: var(--warning-color);
+            animation: pulse 1.5s infinite;
+        }
+
+        .pii-alert {
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            color: #92400e;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .pii-alert strong {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .welcome-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .example-queries {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .example-card {
+            padding: 1rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .example-card:hover {
+            background: var(--bg-secondary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .example-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .example-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .example-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .metric-item {
+            text-align: center;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: block;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin: 1rem 0;
+            font-size: 0.875rem;
+        }
+
+        .loading-message {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius);
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--text-secondary);
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+                padding: 1rem;
+            }
+
+            .sidebar {
+                order: -1;
+            }
+
+            .example-queries {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .header {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 1.25rem;
+            }
+
+            .input-form {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .submit-btn {
+                width: 100%;
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <h1>
+                🏥 Medical Agent Platform
+            </h1>
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Connecting...</span>
+            </div>
+        </header>
+
+        <main class="main-container">
+            <section class="chat-section">
+                <div class="chat-header">
+                    <span class="chat-title">Medical Research Assistant</span>
+                    <button class="clear-btn" id="clearBtn" type="button">Clear Chat</button>
+                </div>
+
+                <div class="messages-container" id="messagesContainer">
+                    <div class="welcome-message" id="welcomeMessage">
+                        <div class="welcome-title">Welcome to Medical Agent Platform</div>
+                        <p>Ask me about clinical trials, drug information, or medical research. I'll intelligently search multiple sources and provide comprehensive analysis.</p>
+                        
+                        <div class="example-queries">
+                            <div class="example-card" data-query="NCT04212345 trial results">
+                                <div class="example-icon">🔬</div>
+                                <div class="example-title">Clinical Trial Lookup</div>
+                                <div class="example-desc">Search by NCT number or condition</div>
+                            </div>
+                            <div class="example-card" data-query="ibuprofen side effects FDA">
+                                <div class="example-icon">💊</div>
+                                <div class="example-title">Drug Safety</div>
+                                <div class="example-desc">FDA data and safety information</div>
+                            </div>
+                            <div class="example-card" data-query="COVID vaccine efficacy meta analysis">
+                                <div class="example-icon">📚</div>
+                                <div class="example-title">Literature Review</div>
+                                <div class="example-desc">PubMed research analysis</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-section">
+                    <form class="input-form" id="queryForm">
+                        <div class="input-wrapper">
+                            <label class="input-label" for="queryInput">Medical Research Query</label>
+                            <textarea 
+                                id="queryInput" 
+                                class="query-input"
+                                placeholder="Ask about clinical trials, drugs, or medical research..."
+                                rows="2"
+                                required
+                            ></textarea>
+                        </div>
+                        <button type="submit" class="submit-btn" id="submitBtn">
+                            <span id="submitText">Analyze</span>
+                            <div id="submitSpinner" class="spinner hidden"></div>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <aside class="sidebar">
+                <div class="panel">
+                    <div class="panel-header">Last Query Analysis</div>
+                    <div class="panel-content">
+                        <div class="decision-item">
+                            <span class="decision-label">Decision:</span>
+                            <span class="decision-value" id="decisionSource">-</span>
+                        </div>
+                        <div class="decision-item">
+                            <span class="decision-label">Confidence:</span>
+                            <div style="flex: 1; margin-left: 1rem;">
+                                <span class="decision-value" id="decisionConfidence">-</span>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" id="confidenceFill" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="decision-item">
+                            <span class="decision-label">Reasoning:</span>
+                            <span class="decision-value" id="decisionReasoning">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">Data Sources</div>
+                    <div class="panel-content">
+                        <div class="source-item">
+                            <span class="source-name">ClinicalTrials.gov</span>
+                            <div class="source-status">
+                                <div class="source-dot" id="ctStatus"></div>
+                                <span id="ctText">Ready</span>
+                            </div>
+                        </div>
+                        <div class="source-item">
+                            <span class="source-name">PubMed</span>
+                            <div class="source-status">
+                                <div class="source-dot" id="pmStatus"></div>
+                                <span id="pmText">Ready</span>
+                            </div>
+                        </div>
+                        <div class="source-item">
+                            <span class="source-name">OpenFDA</span>
+                            <div class="source-status">
+                                <div class="source-dot" id="fdaStatus"></div>
+                                <span id="fdaText">Ready</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">Session Metrics</div>
+                    <div class="panel-content">
+                        <div class="metrics-grid">
+                            <div class="metric-item">
+                                <span class="metric-value" id="queryCount">0</span>
+                                <div class="metric-label">Queries</div>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-value" id="responseTime">-</span>
+                                <div class="metric-label">Avg Time</div>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-value" id="piiCount">0</span>
+                                <div class="metric-label">PII Detected</div>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-value" id="cacheHit">0%</span>
+                                <div class="metric-label">Cache Hit</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <script>
+        class MedicalAgentApp {
+            constructor() {
+                this.apiBase = window.location.hostname === 'localhost' 
+                    ? 'http://localhost:8080/api' 
+                    : '/api';
+                
+                this.state = {
+                    isLoading: false,
+                    queryCount: 0,
+                    totalResponseTime: 0,
+                    piiDetectedCount: 0,
+                    cacheHitCount: 0,
+                    messages: []
+                };
+                
+                this.elements = this.initializeElements();
+                this.initializeEventListeners();
+                this.checkServerStatus();
+            }
+            
+            initializeElements() {
+                return {
+                    form: document.getElementById('queryForm'),
+                    input: document.getElementById('queryInput'),
+                    submitBtn: document.getElementById('submitBtn'),
+                    submitText: document.getElementById('submitText'),
+                    submitSpinner: document.getElementById('submitSpinner'),
+                    messagesContainer: document.getElementById('messagesContainer'),
+                    welcomeMessage: document.getElementById('welcomeMessage'),
+                    clearBtn: document.getElementById('clearBtn'),
+                    
+                    // Status elements
+                    statusDot: document.getElementById('statusDot'),
+                    statusText: document.getElementById('statusText'),
+                    
+                    // Decision panel
+                    decisionSource: document.getElementById('decisionSource'),
+                    decisionConfidence: document.getElementById('decisionConfidence'),
+                    decisionReasoning: document.getElementById('decisionReasoning'),
+                    confidenceFill: document.getElementById('confidenceFill'),
+                    
+                    // Source status
+                    ctStatus: document.getElementById('ctStatus'),
+                    ctText: document.getElementById('ctText'),
+                    pmStatus: document.getElementById('pmStatus'),
+                    pmText: document.getElementById('pmText'),
+                    fdaStatus: document.getElementById('fdaStatus'),
+                    fdaText: document.getElementById('fdaText'),
+                    
+                    // Metrics
+                    queryCount: document.getElementById('queryCount'),
+                    responseTime: document.getElementById('responseTime'),
+                    piiCount: document.getElementById('piiCount'),
+                    cacheHit: document.getElementById('cacheHit')
+                };
+            }
+            
+            initializeEventListeners() {
+                this.elements.form.addEventListener('submit', this.handleSubmit.bind(this));
+                this.elements.clearBtn.addEventListener('click', this.clearChat.bind(this));
+                
+                // Example query cards
+                document.querySelectorAll('.example-card').forEach(card => {
+                    card.addEventListener('click', () => {
+                        const query = card.dataset.query;
+                        this.elements.input.value = query;
+                        this.elements.input.focus();
+                    });
+                });
+                
+                // Auto-resize textarea
+                this.elements.input.addEventListener('input', this.autoResizeTextarea.bind(this));
+                
+                // Enter to submit (Shift+Enter for new line)
+                this.elements.input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.elements.form.requestSubmit();
+                    }
+                });
+            }
+            
+            autoResizeTextarea() {
+                const textarea = this.elements.input;
+                textarea.style.height = 'auto';
+                textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+            }
+            
+            async checkServerStatus() {
+                try {
+                    const response = await fetch(`${this.apiBase}/health/status`, {
+                        signal: AbortSignal.timeout(5000)
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.updateSystemStatus('Ready', 'success');
+                        console.log('Server status:', data);
+                    } else {
+                        throw new Error(`Server returned ${response.status}`);
+                    }
+                } catch (error) {
+                    console.error('Server status check failed:', error);
+                    this.updateSystemStatus('Offline', 'error');
+                }
+            }
+            
+            updateSystemStatus(text, type = 'info') {
+                this.elements.statusText.textContent = text;
+                this.elements.statusDot.className = `status-dot ${type === 'success' ? '' : type}`;
+            }
+            
+            updateSourceStatus(source, status, text = '') {
+                const statusDot = this.elements[`${source}Status`];
+                const statusText = this.elements[`${source}Text`];
+                
+                if (statusDot) {
+                    statusDot.className = `source-dot ${status}`;
+                }
+                if (statusText) {
+                    statusText.textContent = text || this.getStatusText(status);
+                }
+            }
+            
+            getStatusText(status) {
+                const statusMap = {
+                    '': 'Ready',
+                    'loading': 'Loading...',
+                    'error': 'Error',
+                    'success': 'Complete'
+                };
+                return statusMap[status] || 'Unknown';
+            }
+            
+            async handleSubmit(e) {
+                e.preventDefault();
+                
+                const query = this.elements.input.value.trim();
+                if (!query || this.state.isLoading) return;
+                
+                // Hide welcome message
+                this.elements.welcomeMessage.classList.add('hidden');
+                
+                // Add user message
+                this.addMessage(query, 'user');
+                this.elements.input.value = '';
+                this.autoResizeTextarea();
+                
+                // Show loading state
+                this.setLoadingState(true);
+                this.updateSystemStatus('Processing...', 'warning');
+                
+                // Add typing indicator
+                const typingId = this.addTypingIndicator();
+                
+                const startTime = Date.now();
+                
+                try {
+                    // Update source statuses to loading
+                    this.updateSourceStatus('ct', 'loading');
+                    this.updateSourceStatus('pm', 'loading');
+                    this.updateSourceStatus('fda', 'loading');
+                    
+                    const response = await fetch(`${this.apiBase}/medical/query`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ query }),
+                        signal: AbortSignal.timeout(30000)
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    // Remove typing indicator
+                    this.removeTypingIndicator(typingId);
+                    
+                    // Process and display results
+                    await this.handleQueryResult(result, Date.now() - startTime);
+                    
+                } catch (error) {
+                    console.error('Query failed:', error);
+                    this.removeTypingIndicator(typingId);
+                    this.addMessage(
+                        `I encountered an error while processing your query: ${error.message}. Please try again or contact support if the issue persists.`,
+                        'assistant',
+                        { isError: true }
+                    );
+                    
+                    // Update source statuses to error
+                    this.updateSourceStatus('ct', 'error');
+                    this.updateSourceStatus('pm', 'error');
+                    this.updateSourceStatus('fda', 'error');
+                    
+                } finally {
+                    this.setLoadingState(false);
+                    this.updateSystemStatus('Ready', 'success');
+                }
+            }
+            
+            async handleQueryResult(result, responseTime) {
+                // Update decision panel
+                this.updateDecisionPanel(result.decision);
+                
+                // Update source statuses based on results
+                this.updateSourceStatuses(result.results);
+                
+                // Check for PII detection
+                let messageContent = result.synthesis || 'Analysis completed successfully.';
+                let piiAlert = null;
+                
+                if (result.piiReport && result.piiReport.detected) {
+                    piiAlert = {
+                        types: result.piiReport.types,
+                        count: result.piiReport.count,
+                        message: result.piiReport.message
+                    };
+                    this.state.piiDetectedCount++;
+                    this.updateMetrics();
+                }
+                
+                // Add assistant response with results
+                this.addMessage(messageContent, 'assistant', {
+                    results: result.results,
+                    piiAlert: piiAlert,
+                    timestamp: result.timestamp
+                });
+                
+                // Update session metrics
+                this.state.queryCount++;
+                this.state.totalResponseTime += responseTime;
+                this.updateMetrics();
+            }
+            
+            updateDecisionPanel(decision) {
+                if (!decision) return;
+                
+                this.elements.decisionSource.textContent = decision.useExternal 
+                    ? `External: ${decision.externalSources?.join(', ') || 'Multiple'}`
+                    : 'Local Documents';
+                    
+                this.elements.decisionConfidence.textContent = 
+                    `${Math.round((decision.confidence || 0) * 100)}%`;
+                    
+                this.elements.decisionReasoning.textContent = 
+                    decision.reasoning || 'No reasoning provided';
+                    
+                // Update confidence bar
+                const confidencePercent = (decision.confidence || 0) * 100;
+                this.elements.confidenceFill.style.width = `${confidencePercent}%`;
+            }
+            
+            updateSourceStatuses(results) {
+                const sources = ['ct', 'pm', 'fda'];
+                const sourceMap = {
+                    ct: 'clinicaltrials',
+                    pm: 'pubmed', 
+                    fda: 'openfda'
+                };
+                
+                sources.forEach(source => {
+                    const sourceKey = sourceMap[source];
+                    if (results && results[sourceKey]) {
+                        const count = results[sourceKey].count || 0;
+                        this.updateSourceStatus(source, count > 0 ? 'success' : '', `${count} results`);
+                    } else {
+                        this.updateSourceStatus(source, '', 'Ready');
+                    }
+                });
+            }
+            
+            addMessage(content, sender, options = {}) {
+                const messageElement = document.createElement('div');
+                messageElement.className = `message ${sender}`;
+                
+                const bubbleElement = document.createElement('div');
+                bubbleElement.className = 'message-bubble';
+                
+                // Handle PII alert
+                if (options.piiAlert) {
+                    const piiElement = document.createElement('div');
+                    piiElement.className = 'pii-alert';
+                    piiElement.innerHTML = `
+                        <strong>⚠️ PII Detected</strong>
+                        Found ${options.piiAlert.count} instance(s) of PII: ${options.piiAlert.types.join(', ')}
+                        <br><small>${options.piiAlert.message}</small>
+                    `;
+                    bubbleElement.appendChild(piiElement);
+                }
+                
+                // Handle error messages
+                if (options.isError) {
+                    bubbleElement.classList.add('error-message');
+                }
+                
+                // Main content
+                const contentElement = document.createElement('div');
+                contentElement.textContent = content;
+                bubbleElement.appendChild(contentElement);
+                
+                // Handle results
+                if (options.results && sender === 'assistant') {
+                    const resultsElement = this.createResultsDisplay(options.results);
+                    bubbleElement.appendChild(resultsElement);
+                }
+                
+                // Timestamp
+                const timestampElement = document.createElement('div');
+                timestampElement.className = 'message-timestamp';
+                timestampElement.textContent = new Date().toLocaleTimeString();
+                bubbleElement.appendChild(timestampElement);
+                
+                messageElement.appendChild(bubbleElement);
+                this.elements.messagesContainer.appendChild(messageElement);
+                
+                // Store message
+                this.state.messages.push({
+                    content,
+                    sender,
+                    timestamp: new Date().toISOString(),
+                    options
+                });
+                
+                // Scroll to bottom
+                this.scrollToBottom();
+            }
+            
+            createResultsDisplay(results) {
+                const resultsContainer = document.createElement('div');
+                resultsContainer.className = 'results-grid';
+                
+                Object.entries(results).forEach(([source, data]) => {
+                    if (data && data.data && data.data.length > 0) {
+                        const card = this.createResultCard(source, data);
+                        resultsContainer.appendChild(card);
+                    }
+                });
+                
+                return resultsContainer;
+            }
+            
+            createResultCard(source, data) {
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                
+                // Header
+                const header = document.createElement('div');
+                header.className = 'result-header';
+                
+                const icon = document.createElement('div');
+                icon.className = `source-icon ${source}`;
+                
+                const title = document.createElement('span');
+                title.textContent = `${data.source} (${data.count})`;
+                
+                header.appendChild(icon);
+                header.appendChild(title);
+                
+                // Content
+                const content = document.createElement('div');
+                content.className = 'result-content';
+                
+                data.data.slice(0, 5).forEach(item => {
+                    const itemElement = this.createResultItem(source, item);
+                    content.appendChild(itemElement);
+                });
+                
+                card.appendChild(header);
+                card.appendChild(content);
+                
+                return card;
+            }
+            
+            createResultItem(source, item) {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'result-item';
+                
+                const title = document.createElement('div');
+                title.className = 'result-title';
+                
+                const meta = document.createElement('div');
+                meta.className = 'result-meta';
+                
+                const link = document.createElement('a');
+                link.className = 'result-link';
+                link.href = item.url || '#';
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.textContent = 'View Details →';
+                
+                // Format based on source type
+                switch (source) {
+                    case 'clinicaltrials':
+                        title.textContent = item.title || 'Untitled Study';
+                        meta.textContent = `${item.nctId} • ${item.status} • Phase ${item.phase || 'N/A'}`;
+                        if (item.conditions && item.conditions.length > 0) {
+                            meta.textContent += ` • ${item.conditions.slice(0, 2).join(', ')}`;
+                        }
+                        break;
+                        
+                    case 'pubmed':
+                        title.textContent = item.title || 'Untitled Article';
+                        meta.textContent = `${item.authors || 'Unknown Authors'} • ${item.journal || 'Unknown Journal'} • ${item.pubdate || 'Unknown Date'}`;
+                        break;
+                        
+                    case 'openfda':
+                        title.textContent = `${item.brandName || item.genericName || 'Unknown Drug'}`;
+                        meta.textContent = `${item.manufacturer || 'Unknown Manufacturer'}`;
+                        if (item.purpose) {
+                            meta.textContent += ` • ${item.purpose.substring(0, 100)}...`;
+                        }
+                        break;
+                }
+                
+                itemElement.appendChild(title);
+                itemElement.appendChild(meta);
+                itemElement.appendChild(link);
+                
+                return itemElement;
+            }
+            
+            addTypingIndicator() {
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message assistant';
+                
+                const bubbleElement = document.createElement('div');
+                bubbleElement.className = 'message-bubble loading-message';
+                
+                bubbleElement.innerHTML = `
+                    <div class="typing-indicator">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                    <span>Analyzing medical data...</span>
+                `;
+                
+                messageElement.appendChild(bubbleElement);
+                
+                const typingId = `typing-${Date.now()}`;
+                messageElement.id = typingId;
+                
+                this.elements.messagesContainer.appendChild(messageElement);
+                this.scrollToBottom();
+                
+                return typingId;
+            }
+            
+            removeTypingIndicator(typingId) {
+                const element = document.getElementById(typingId);
+                if (element) {
+                    element.remove();
+                }
+            }
+            
+            setLoadingState(isLoading) {
+                this.state.isLoading = isLoading;
+                
+                this.elements.submitBtn.disabled = isLoading;
+                this.elements.input.disabled = isLoading;
+                
+                if (isLoading) {
+                    this.elements.submitText.classList.add('hidden');
+                    this.elements.submitSpinner.classList.remove('hidden');
+                } else {
+                    this.elements.submitText.classList.remove('hidden');
+                    this.elements.submitSpinner.classList.add('hidden');
+                }
+            }
+            
+            updateMetrics() {
+                this.elements.queryCount.textContent = this.state.queryCount;
+                
+                if (this.state.queryCount > 0) {
+                    const avgTime = Math.round(this.state.totalResponseTime / this.state.queryCount);
+                    this.elements.responseTime.textContent = `${avgTime}ms`;
+                }
+                
+                this.elements.piiCount.textContent = this.state.piiDetectedCount;
+                
+                // Calculate cache hit rate (simplified)
+                const cacheHitRate = this.state.queryCount > 0 
+                    ? Math.round((this.state.cacheHitCount / this.state.queryCount) * 100)
+                    : 0;
+                this.elements.cacheHit.textContent = `${cacheHitRate}%`;
+            }
+            
+            clearChat() {
+                // Clear messages except welcome
+                this.elements.messagesContainer.innerHTML = '';
+                this.elements.messagesContainer.appendChild(this.elements.welcomeMessage);
+                this.elements.welcomeMessage.classList.remove('hidden');
+                
+                // Reset state
+                this.state.messages = [];
+                this.state.queryCount = 0;
+                this.state.totalResponseTime = 0;
+                this.state.piiDetectedCount = 0;
+                this.state.cacheHitCount = 0;
+                
+                // Reset decision panel
+                this.elements.decisionSource.textContent = '-';
+                this.elements.decisionConfidence.textContent = '-';
+                this.elements.decisionReasoning.textContent = '-';
+                this.elements.confidenceFill.style.width = '0%';
+                
+                // Reset source statuses
+                this.updateSourceStatus('ct', '', 'Ready');
+                this.updateSourceStatus('pm', '', 'Ready');
+                this.updateSourceStatus('fda', '', 'Ready');
+                
+                // Update metrics
+                this.updateMetrics();
+            }
+            
+            scrollToBottom() {
+                requestAnimationFrame(() => {
+                    this.elements.messagesContainer.scrollTop = 
+                        this.elements.messagesContainer.scrollHeight;
+                });
+            }
+            
+            // Export chat functionality
+            exportChat() {
+                const chatData = {
+                    timestamp: new Date().toISOString(),
+                    messages: this.state.messages,
+                    metrics: {
+                        queryCount: this.state.queryCount,
+                        avgResponseTime: this.state.queryCount > 0 
+                            ? Math.round(this.state.totalResponseTime / this.state.queryCount)
+                            : 0,
+                        piiDetected: this.state.piiDetectedCount
+                    }
+                };
+                
+                const blob = new Blob([JSON.stringify(chatData, null, 2)], 
+                    { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `medical-chat-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            window.medicalApp = new MedicalAgentApp();
+            
+            // Global error handler
+            window.addEventListener('error', (event) => {
+                console.error('Global error:', event.error);
+                if (window.medicalApp) {
+                    window.medicalApp.updateSystemStatus('Error', 'error');
+                }
+            });
+            
+            // Prevent form submission on page refresh
+            window.addEventListener('beforeunload', (event) => {
+                if (window.medicalApp && window.medicalApp.state.isLoading) {
+                    event.preventDefault();
+                    event.returnValue = '';
+                }
+            });
+        });
+
+        // Service Worker for offline capabilities (optional)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(registrationError => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
